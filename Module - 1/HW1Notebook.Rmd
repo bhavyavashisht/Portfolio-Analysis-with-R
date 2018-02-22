@@ -1,0 +1,379 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+```{r}
+# set working directory
+setwd("C:\\Users\\Bhavya\\Dropbox\\Docs\\Berkeley\\Academic\\INDENG 224\\Homeworks\\HW - 1");
+```
+
+```{r}
+# loading Russell 2000 data
+russell<-read.csv("Russell2000.csv");
+russell
+```
+```{r}
+# loading S&P 500 data
+snp<-read.csv("SP500.csv");
+snp
+```
+```{r}
+# plotting closing prices with unformatted date
+plot(russell$Date,russell$Adj.Close)
+plot(snp$Date,snp$Adj.Close)
+```
+```{r}
+# plotting closing prices with formatted date
+russell$PosixDate <- as.POSIXlt(russell$Date)
+snp$PosixDate <- as.POSIXlt(snp$Date)
+
+plot(russell$PosixDate, russell$Adj.Close,
+     xlab="Date",
+     ylab="Adjusted Closing Price",
+     type="l")
+plot(snp$PosixDate, snp$Adj.Close,
+     xlab="Date",
+     ylab="Adjusted Closing Price",
+     type="l")
+```
+
+```{r}
+# calculating daily returns for Russell 2000
+n = dim(russell)[1]
+russell$DailyReturns[2 : n] = russell$Adj.Close[2 : n] / 
+  russell$Adj.Close[1 : (n - 1)] - 1
+
+# plotting daily returns for Russell 2000
+plot(russell$PosixDate, russell$DailyReturns,
+     xlab="Date",
+     ylab="Return",
+     main="Daily Returns on Russell 2000",
+     type="l",
+     )
+```
+
+```{r}
+# calculating daily returns for S&P 500
+n = dim(snp)[1]
+snp$DailyReturns[2 : n] = snp$Adj.Close[2 : n] / 
+  snp$Adj.Close[1 : (n - 1)] - 1
+
+# plotting daily returns for S&P 500
+plot(snp$PosixDate, snp$DailyReturns,
+     xlab="Date",
+     ylab="Return",
+     main="Daily Returns on S&P 500",
+     type="l",
+     )
+```
+```{r}
+# checking data for NAs
+cat("The occurence of NA in Russell data: ",any(is.na(russell)))
+cat("\nThe occurence of NA in S&P data: ",any(is.na(snp)))
+```
+```{r}
+# calculating the statistics of daily returns
+library(moments)
+cat("Russell mean daily return: ",100*mean(russell$DailyReturns, na.rm=T),"%")
+cat("\nRussel Standard Deviation: ", sd(russell$DailyReturns, na.rm = T))
+cat("\nRussel Skewness: ", skewness(russell$DailyReturns, na.rm = T))
+cat("\nRussel Kurtosis: ", kurtosis(russell$DailyReturns, na.rm = T))
+cat("\n\nS&P mean daily return: ",100*mean(snp$DailyReturns, na.rm=T),"%")
+cat("\nS&P Standard Deviation: ", sd(snp$DailyReturns, na.rm = T))
+cat("\nS&P Skewness: ", skewness(snp$DailyReturns, na.rm = T))
+cat("\nS&P Kurtosis: ", kurtosis(snp$DailyReturns, na.rm = T))
+```
+```{r}
+# more statistics about daily returns
+summary(russell$DailyReturns)
+summary(snp$DailyReturns)
+```
+```{r}
+# calculating monthly returns
+library(dplyr)
+russell$year <- 1900 + russell$PosixDate$year
+russell$month <- russell$PosixDate$mon + 1
+russell$yearmonth <- russell$year * 100 + russell$month
+russell.Monthly <- data.frame(
+    russell %>% 
+    select(yearmonth, DailyReturns) %>%
+    group_by(yearmonth) %>%
+    summarise(return = prod(1 + DailyReturns, na.rm=TRUE) - 1)
+)
+summary(russell.Monthly$return)
+plot(russell.Monthly$yearmonth,russell.Monthly$return,
+     xlab="Date",
+     ylab="Return",
+     main="Monthly Returns on Russell 2000",
+     type="l"
+     )
+
+snp$year <- 1900 + snp$PosixDate$year
+snp$month <- snp$PosixDate$mon + 1
+snp$yearmonth <- snp$year * 100 + snp$month
+snp.Monthly <- data.frame(
+    snp %>% 
+    select(yearmonth, DailyReturns) %>%
+    group_by(yearmonth) %>%
+    summarise(return = prod(1 + DailyReturns, na.rm=TRUE) - 1)
+)
+summary(snp.Monthly$return)
+plot(snp.Monthly$yearmonth,snp.Monthly$return,
+     xlab="Date",
+     ylab="Return",
+     main="Monthly Returns on S&P 500",
+     type="l"
+     )
+```
+```{r}
+# calculating the statistics of monthly returns
+cat("Russell mean monthly return: ",100*mean(russell.Monthly$return, na.rm=T),"%")
+cat("\nRussel Standard Deviation: ", sd(russell.Monthly$return, na.rm = T))
+cat("\nRussel Skewness: ", skewness(russell.Monthly$return, na.rm = T))
+cat("\nRussel Kurtosis: ", kurtosis(russell.Monthly$return, na.rm = T))
+cat("\n\nS&P mean monthly return: ",100*mean(snp.Monthly$return, na.rm=T),"%")
+cat("\nS&P Standard Deviation: ", sd(snp.Monthly$return, na.rm = T))
+cat("\nS&P Skewness: ", skewness(snp.Monthly$return, na.rm = T))
+cat("\nS&P Kurtosis: ", kurtosis(snp.Monthly$return, na.rm = T))
+```
+
+```{r}
+#calculating the yearly returns
+russell.Yearly <- data.frame(
+    russell %>% 
+    select(year, DailyReturns) %>%
+    group_by(year) %>%
+    summarise(return = prod(1 + DailyReturns, na.rm=TRUE) - 1)
+)
+summary(russell.Yearly$return)
+plot(russell.Yearly$year,russell.Yearly$return,
+     xlab="Date",
+     ylab="Return",
+     main="Yearly Returns on Russell 2000",
+     type="l"
+     )
+
+snp.Yearly <- data.frame(
+    snp %>% 
+    select(year, DailyReturns) %>%
+    group_by(year) %>%
+    summarise(return = prod(1 + DailyReturns, na.rm=TRUE) - 1)
+)
+summary(snp.Yearly$return)
+plot(snp.Yearly$year,snp.Yearly$return,
+     xlab="Date",
+     ylab="Return",
+     main="Yearly Returns on S&P 500",
+     type="l"
+     )
+```
+```{r}
+# calculating the statistics of Yearly returns
+cat("Russell mean yearly return: ",100*mean(russell.Yearly$return, na.rm=T),"%")
+cat("\nRussel Standard Deviation: ", sd(russell.Yearly$return, na.rm = T))
+cat("\nRussel Skewness: ", skewness(russell.Yearly$return, na.rm = T))
+cat("\nRussel Kurtosis: ", kurtosis(russell.Yearly$return, na.rm = T))
+cat("\n\nS&P mean yearly return: ",100*mean(snp.Yearly$return, na.rm=T),"%")
+cat("\nS&P Standard Deviation: ", sd(snp.Yearly$return, na.rm = T))
+cat("\nS&P Skewness: ", skewness(snp.Yearly$return, na.rm = T))
+cat("\nS&P Kurtosis: ", kurtosis(snp.Yearly$return, na.rm = T))
+```
+```{r}
+# calculating the log return plots for daily, monthly, yearly 
+russell$LogDailyReturns <- log(1 + russell$DailyReturns)
+plot(russell$PosixDate, russell$LogDailyReturns,
+     xlab="Date",
+     ylab="Return",
+     main="Daily Log Returns on Russell 2000",
+     type="l"
+     )
+
+snp$LogDailyReturns <- log(1 + snp$DailyReturns)
+plot(snp$PosixDate, snp$LogDailyReturns,
+     xlab="Date",
+     ylab="Return",
+     main="Daily Log Returns on S&P 500",
+     type="l"
+     )
+
+russell.Monthly$LogMonthlyReturns <- log(1 + russell.Monthly$return)
+plot(russell.Monthly$yearmonth, russell.Monthly$return,
+     xlab="Date",
+     ylab="Return",
+     main="Monthly Log Returns on Russell 2000",
+     type="l"
+     )
+
+snp.Monthly$LogMonthlyReturns <- log(1 + snp.Monthly$return)
+plot(snp.Monthly$yearmonth, snp.Monthly$return,
+     xlab="Date",
+     ylab="Return",
+     main="Monthly Log Returns on S&P 500",
+     type="l"
+     )
+
+russell.Yearly$LogYearlyReturns <- log(1 + russell.Yearly$return)
+plot(russell.Yearly$year, russell.Yearly$return,
+     xlab="Date",
+     ylab="Return",
+     main="Yearly Log Returns on Russell 2000",
+     type="l"
+     )
+
+snp.Yearly$LogYearlyReturns <- log(1 + snp.Yearly$return)
+plot(snp.Yearly$year, snp.Yearly$return,
+     xlab="Date",
+     ylab="Return",
+     main="Yearly Log Returns on S&P 500",
+     type="l"
+     )
+```
+```{r}
+# calculating statistics for daily, monthly and weekly log returns
+cat("Russell mean daily log return: ",100*mean(russell$LogDailyReturns, na.rm=T),"%")
+cat("\nRussel Standard Deviation: ", sd(russell$LogDailyReturns, na.rm = T))
+cat("\nRussel Skewness: ", skewness(russell$LogDailyReturns, na.rm = T))
+cat("\nRussel Kurtosis: ", kurtosis(russell$LogDailyReturns, na.rm = T))
+cat("\n\nS&P mean daily log return: ",100*mean(snp$LogDailyReturns, na.rm=T),"%")
+cat("\nS&P Standard Deviation: ", sd(snp$LogDailyReturns, na.rm = T))
+cat("\nS&P Skewness: ", skewness(snp$LogDailyReturns, na.rm = T))
+cat("\nS&P Kurtosis: ", kurtosis(snp$LogDailyReturns, na.rm = T))
+
+cat("\n\n\nRussell mean monthly log return: ",100*mean(russell.Monthly$LogMonthlyReturns, na.rm=T),"%")
+cat("\nRussel Standard Deviation: ", sd(russell.Monthly$LogMonthlyReturns, na.rm = T))
+cat("\nRussel Skewness: ", skewness(russell.Monthly$LogMonthlyReturns, na.rm = T))
+cat("\nRussel Kurtosis: ", kurtosis(russell.Monthly$LogMonthlyReturns, na.rm = T))
+cat("\n\nS&P mean monthly log return: ",100*mean(snp.Monthly$LogMonthlyReturns, na.rm=T),"%")
+cat("\nS&P Standard Deviation: ", sd(snp.Monthly$LogMonthlyReturns, na.rm = T))
+cat("\nS&P Skewness: ", skewness(snp.Monthly$LogMonthlyReturns, na.rm = T))
+cat("\nS&P Kurtosis: ", kurtosis(snp.Monthly$LogMonthlyReturns, na.rm = T))
+
+cat("\n\n\nRussell mean yearly returns",100*mean(russell.Yearly$LogYearlyReturns, na.rm=T),"%")
+cat("\nRussel Standard Deviation: ", sd(russell.Yearly$LogYearlyReturns, na.rm = T))
+cat("\nRussel Skewness: ", skewness(russell.Yearly$LogYearlyReturns, na.rm = T))
+cat("\nRussel Kurtosis: ", kurtosis(russell.Yearly$LogYearlyReturns, na.rm = T))
+cat("\n\nS&P mean yearly returns",100*mean(snp.Yearly$LogYearlyReturns, na.rm=T),"%")
+cat("\nS&P Standard Deviation: ", sd(snp.Yearly$LogYearlyReturns, na.rm = T))
+cat("\nS&P Skewness: ", skewness(snp.Yearly$LogYearlyReturns, na.rm = T))
+cat("\nS&P Kurtosis: ", kurtosis(snp.Yearly$LogYearlyReturns, na.rm = T))
+```
+```{r}
+# making lists of frequently used data
+index <- c("Russell 2000", "S&P 500")
+period <- c("Daily", "Monthly", "Yearly")
+columns.russell <- list(russell$DailyReturns, russell.Monthly$return, russell.Yearly$return)
+columns.snp <- list(snp$DailyReturns, snp.Monthly$return, snp.Yearly$return)
+index.data <- list(columns.russell, columns.snp)
+logr.russell <- list(russell$LogDailyReturn, russell.Monthly$LogMonthlyReturn, russell.Yearly$LogYearlyReturn)
+logr.snp <- list(snp$LogDailyReturn, snp.Monthly$LogMonthlyReturn, snp.Yearly$LogYearlyReturn)
+index.logdata <- list(logr.russell, logr.snp)
+print("List creation completed.")
+```
+```{r}
+#Plotting density functions
+for (i in 1:2) 
+  {
+  for (j in 1:3) 
+    {
+      plot(density(index.data[[i]][[j]], na.rm = T), 
+         main = paste("Density function for", index[i], period[j], "returns"))
+    lines(density(rnorm(1e5, mean=mean(index.data[[i]][[j]], na.rm=T),
+                        sd=sd(index.data[[i]][[j]], na.rm=TRUE))), col=2)
+    dev.copy(png, paste("Density", index[i], period[j], "returns.png"), width=420, height=280)
+    dev.off()
+  }
+}
+```
+```{r}
+#Plotting density functions for log returns
+for (i in 1:2) {
+  for (j in 1:3) {
+    plot(density(index.logdata[[i]][[j]], na.rm = T), 
+         main = paste("Density function for", index[i], period[j], "log returns"))
+    lines(density(rnorm(1e5, mean=mean(index.logdata[[i]][[j]], na.rm=T),
+                        sd=sd(index.logdata[[i]][[j]], na.rm=TRUE))), col=2)
+    dev.copy(png, paste("Density", index[i], period[j], "log returns.png"), width=420, height=280)
+    dev.off()
+  }
+}
+```
+```{r}
+# checking normality of the return density functions
+for (i in 1:2) {
+  for (j in 1:3) {
+    len <- NROW(index.data[[i]][[j]])
+    len <- ifelse(j == 1, 5000, len)
+    print(paste("Shapiro-Wilk Test for", index[i], period[j], "returns"))
+    print(shapiro.test(index.data[[i]][[j]][1:len]))
+  }
+}
+```
+```{r}
+# checking normality of the log return density functions
+for (i in 1:2) {
+  for (j in 1:3) {
+    len <- NROW(index.logdata[[i]][[j]])
+    len <- ifelse(j == 1, 5000, len)
+    print(paste("Shapiro-Wilk Test for", index[i], period[j], "log returns"))
+    print(shapiro.test(index.logdata[[i]][[j]][1:len]))
+  }
+}
+```
+```{r}
+# plotting Q-Q plots for Returns
+for (i in 1:2) {
+  for (j in 1:3) {
+    qqnorm(index.data[[i]][[j]], ylab = paste("Quantiles for", index[i], period[j], "returns"),
+           main = paste("Normal Q-Q Plot for", index[i], period[j], "returns"))
+    qqline(index.data[[i]][[j]])
+    dev.copy(png, paste("qq", index[i], period[j], "returns.png"), width=420, height=280)
+    dev.off()
+  }
+}
+```
+```{r}
+# plotting Q-Q plots for Log Returns
+for (i in 1:2) {
+  for (j in 1:3) {
+    qqnorm(index.logdata[[i]][[j]], ylab = paste("Quantiles for", index[i], period[j], "log returns"),
+           main = paste("Normal Q-Q Plot for", index[i], period[j], "log returns"))
+    qqline(index.logdata[[i]][[j]])
+    dev.copy(png, paste("qq", index[i], period[j], "log returns.png"), width=420, height=280)
+    dev.off()
+  }
+}
+```
+```{r}
+# plotting t-probability plots with df = 1...8 for returns
+for (i in 1:2) {
+  for (j in 1:3) {
+    for (k in 1:8) {
+      sampleT <- rt(NROW(index.data[[i]][[j]]), df=k)
+      qqplot(sampleT, index.data[[i]][[j]], 
+             ylab = paste("Quantiles for", index[i], period[j], "returns"),
+             main = paste("T-distribution for", index[i], period[j], "returns with", toString(k), "df"))
+      qqline(index.data[[i]][[j]])
+      dev.copy(png, paste(index[i], period[j], "returns T", toString(k), "df.png"), width=420, height=280)
+      dev.off()
+    }
+  }
+}
+```
+```{r}
+# plotting t-probability plots with df = 1...8 for log returns
+for (i in 1:2) {
+  for (j in 1:3) {
+    for (k in 1:8) {
+      sampleT <- rt(NROW(index.logdata[[i]][[j]]), df=k)
+      qqplot(sampleT, index.logdata[[i]][[j]], 
+             ylab = paste("Quantiles for", index[i], period[j], "log returns"),
+             main = paste("T-distribution for", index[i], period[j], "log returns with", toString(k), "df"))
+      qqline(index.logdata[[i]][[j]])
+      dev.copy(png, paste(index[i], period[j], "log returns T", toString(k), "df.png"), 
+               width=420, height=280)
+      dev.off()
+    }
+  }
+}
+```
+
