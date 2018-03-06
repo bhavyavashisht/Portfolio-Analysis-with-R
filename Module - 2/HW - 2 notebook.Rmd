@@ -1,0 +1,125 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+# setting working directory
+setwd("C:\\Users\\Bhavya\\Dropbox\\Docs\\Berkeley\\Academic\\INDENG 224\\Homeworks\\HW - 2")
+
+# importing data
+spdr<-read.csv("spiderETF_5yr.csv")
+head(spdr)
+```
+<br>
+<U>Solution - 3</U>
+```{r}
+# finding the covariance matrix of all ETFs
+n=nrow(spdr)
+spdr_return=data.frame()
+for(i in 2:10){
+  spdr_return[1:n-1,i-1]=(spdr[2:n,i]/spdr[1:n-1,i])-1
+}
+names(spdr_return)=colnames(spdr)[2:10]
+print("The covariance matrix of monthly returns of Spider sector ETFs is:")
+spd_cov=cov(spdr_return)
+spd_cov
+```
+<br>
+<U>Solution - 4<\U>
+```{r}
+spdr_means=lapply(spdr_return,mean)
+spdr_means=as.numeric(spdr_means)
+print("The average monthly returns expected are:");
+for(i in 2:10){
+  cat(cat(colnames(spdr)[i],spdr_means[i-1], sep=" - "),"\n")
+}
+```
+<br>
+<U>Solution - 5</U>
+```{r}
+require(quadprog)
+ExpMonRet = seq(0.004,0.02,by=0.0001)
+MonRetStd = c()
+Weights1 = c()
+Weights2 = c()
+Weights3 = c()
+Weights4 = c()
+Weights5 = c()
+Weights6 = c()
+Weights7 = c()
+Weights8 = c()
+Weights9 = c()
+for(i in (1:length(ExpMonRet)))
+  {
+    Dmat <- spd_cov
+    dvec <- rep(0,9)
+    A1 <- diag(9)
+    A2 <- -diag(9)
+    A3 <- rep(1,9)
+    A4 <- -rep(1,9)
+    A5 <- spdr_means
+    A6 <- -spdr_means
+    Amat = cbind(A1,A3,A4,A5,A6)
+    bvec = c(0,0,0,0,0,0,0,0,0,1,-1,ExpMonRet[i],-ExpMonRet[i])
+    sol = solve.QP(2*Dmat,dvec,Amat,bvec=bvec)
+    MonRetStd <- c(MonRetStd,sqrt(sol$value))
+    Weights1 <- c(Weights1,sol$solution[1])
+    Weights2 <- c(Weights2,sol$solution[2])
+    Weights3 <- c(Weights3,sol$solution[3])
+    Weights4 <- c(Weights4,sol$solution[4])
+    Weights5 <- c(Weights5,sol$solution[5])
+    Weights6 <- c(Weights6,sol$solution[6])
+    Weights7 <- c(Weights7,sol$solution[7])
+    Weights8 <- c(Weights8,sol$solution[8])
+    Weights9 <- c(Weights9,sol$solution[9])
+  }
+print("Weights of minimum variance portfolio:")
+min_idx = which.min(MonRetStd)
+print(Weights1[min_idx])
+print(Weights2[min_idx])
+print(Weights3[min_idx])
+print(Weights4[min_idx])
+print(Weights5[min_idx])
+print(Weights6[min_idx])
+print(Weights7[min_idx])
+print(Weights8[min_idx])
+print(Weights9[min_idx])
+cat("\n")
+
+print("Weights of maximum sharp portfolio:")
+riskfree = 0.01
+ratiosharpe = c()
+for(i in (1:length(ExpMonRet)))
+{
+  sol <- (ExpMonRet[i]-riskfree)/MonRetStd[i]
+  ratiosharpe <- c(ratiosharpe,sol)
+}
+max_idx = which.max(ratiosharpe)
+print(Weights1[max_idx])
+print(Weights2[max_idx])
+print(Weights3[max_idx])
+print(Weights4[max_idx])
+print(Weights5[max_idx])
+print(Weights6[max_idx])
+print(Weights7[max_idx])
+print(Weights8[max_idx])
+print(Weights9[max_idx])
+cat("\n")
+  jpeg('1.jpg', width = 480, height = 280,
+     pointsize = 12, quality = 75, bg = "white", res = NA)
+plot(MonRetStd,ExpMonRet,
+     xlab="Volatility",
+     ylab="Expected Return",
+     xlim=c(0,0.07),
+     main="Efficient Frontier of Spider ETF",
+     type="p")
+points(MonRetStd[min_idx],ExpMonRet[min_idx],col=3)
+abline(h=riskfree)
+
+points(MonRetStd[max_idx],ExpMonRet[max_idx],col=2)
+slope = (ExpMonRet[max_idx]-riskfree)/MonRetStd[max_idx]
+CAL = slope*MonRetStd + riskfree
+lines(MonRetStd,CAL)
+dev.off()
+```
